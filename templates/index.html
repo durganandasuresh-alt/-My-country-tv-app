@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="My Country TV - Watch 10,000+ live TV channels, shows, movies & sports in Telugu, Hindi, English, Kannada, Tamil and more. Free 10-day trial, then ₹99/month." />
+  <title>My Country TV - Live TV Channels, Shows & Movies</title>
+
+  <!-- PWA Manifest & Mobile Optimization -->
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
+  <meta name="theme-color" content="#0a0b12" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="My Country TV" />
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/logo-192.png') }}" />
+
+  <!-- HLS.js for live M3U8 playback -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+  <!-- Jio Fonts & Remix Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.0" />
+</head>
+<body class="dark-theme">
+
+  <!-- JioTV Top Header Navigation -->
+  <header class="jio-header">
+    <div class="header-left">
+      <div class="jio-logo" id="headerBrandLogo" role="button" tabindex="0" title="My Country TV Home">
+        <span class="jio-circle">My Country</span>
+        <span class="tv-text">TV</span>
+      </div>
+    </div>
+
+    <!-- Center Search Bar -->
+    <div class="header-search">
+      <i class="ri-search-line search-icon"></i>
+      <input type="text" id="searchInput" placeholder="Search Channels, Shows or Sports..." autocomplete="off" />
+      <button id="clearSearch" class="clear-btn hidden" aria-label="Clear search"><i class="ri-close-line"></i></button>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="header-right">
+      <!-- Language Filter Dropdown -->
+      <div class="lang-selector">
+        <i class="ri-translate-2"></i>
+        <select id="langFilter" aria-label="Filter channels by language">
+          <option value="All">All Languages</option>
+          <option value="Telugu">Telugu</option>
+          <option value="Hindi">Hindi</option>
+          <option value="English">English</option>
+          <option value="Kannada">Kannada</option>
+          <option value="Tamil">Tamil</option>
+          <option value="Malayalam">Malayalam</option>
+          <option value="Marathi">Marathi</option>
+          <option value="Bengali">Bengali</option>
+        </select>
+      </div>
+
+      <!-- Subscription Plan Status Pill / Upgrade Button -->
+      <button class="sub-status-btn" id="btnSubscriptionStatus" aria-label="Subscription Plans">
+        <span class="sub-badge-icon" id="subBadgeIcon"><i class="ri-gift-fill"></i></span>
+        <span id="headerSubText">10 Days Free Plan</span>
+      </button>
+
+      <!-- Profile Avatar / Login Icon -->
+      <div class="user-avatar" id="btnUserAccount" role="button" tabindex="0" aria-label="Account Settings & Profile" title="Account & Settings">
+        <i class="ri-user-fill" id="headerUserIcon"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main TV Experience Layout -->
+  <main class="jio-main">
+
+    <!-- Sticky Video Player Section -->
+    <section class="player-container" id="playerContainer">
+      <!-- Current Show & Channel Info Bar (Above / Integrated into Player) -->
+      <div class="channel-info-bar">
+        <div class="channel-meta-left">
+          <div class="channel-icon-container" id="channelAvatar">
+            <span>TV</span>
+          </div>
+          <div class="channel-text-info">
+            <div class="title-row">
+              <h1 id="channelTitle">Select Channel</h1>
+              <span class="hd-badge">HD</span>
+            </div>
+            <p id="showTitle" class="current-show">Live Broadcast</p>
+            <div class="show-submeta">
+              <span id="showTiming" class="time-stamp"><i class="ri-time-line"></i> Live Feed</span>
+              <span class="dot-sep">•</span>
+              <span id="channelCategory" class="genre-stamp">Entertainment</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="channel-actions">
+          <button class="action-btn" id="btnFavorite" aria-label="Add to Favorites"><i class="ri-heart-line"></i> <span>Favorite</span></button>
+          <button class="action-btn" id="btnShare" aria-label="Share Channel"><i class="ri-share-forward-line"></i> <span>Share</span></button>
+        </div>
+      </div>
+
+      <!-- Video Viewport -->
+      <div class="video-viewport" id="videoBox">
+        <video id="liveVideo" autoplay playsinline preload="auto"></video>
+
+        <!-- Edge Circular Navigation Arrows (prev / next channel) -->
+        <button id="edgePrev" class="edge-arrow edge-arrow-left" aria-label="Previous Channel">
+          <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <button id="edgeNext" class="edge-arrow edge-arrow-right" aria-label="Next Channel">
+          <i class="ri-arrow-right-s-line"></i>
+        </button>
+
+        <!-- Stream Unavailable Error Overlay -->
+        <div class="stream-error-overlay hidden" id="streamError">
+          <div class="network-pulse-ring">
+            <i class="ri-wifi-off-line"></i>
+          </div>
+          <h3 id="streamErrorHeading">Network is Not There</h3>
+          <p id="streamErrorMsg">Network is not there or this channel feed is currently offline.</p>
+          <div class="stream-error-actions">
+            <button id="btnRetryStream" class="retry-btn"><i class="ri-refresh-line"></i> Try Reconnect</button>
+            <button id="btnNextOfflineChannel" class="next-ch-btn"><i class="ri-skip-forward-line"></i> Next Channel</button>
+          </div>
+        </div>
+
+        <!-- Subscription Locked Overlay -->
+        <div class="stream-error-overlay sub-lock-overlay hidden" id="subLockOverlay">
+          <div class="sub-pulse-lock">
+            <i class="ri-lock-2-fill"></i>
+          </div>
+          <h3 id="lockHeading">10 Days Free Plan Expired</h3>
+          <p id="lockMsg">Your 10 days free trial with 10,000+ channels has ended. You need to buy a monthly plan to unlock all live channels!</p>
+          <div class="stream-error-actions">
+            <button id="btnUnlockSubscription" class="retry-btn btn-upgrade-glow">
+              <i class="ri-vip-crown-fill"></i> Buy Monthly Plan (₹99 / ₹299 / ₹1,199)
+            </button>
+          </div>
+        </div>
+
+        <!-- JioTV Custom Video Overlay Controls -->
+        <div class="video-overlay" id="videoOverlay">
+          <div class="overlay-top">
+            <div class="channel-badge-group">
+              <button id="btnFsBack" class="ctrl-btn fs-back-btn hidden" aria-label="Exit Fullscreen">
+                <i class="ri-arrow-left-line"></i>
+              </button>
+              <span class="live-pill"><span class="dot"></span> LIVE</span>
+              <span class="channel-name-tag" id="overlayChannelName">Connecting Stream...</span>
+            </div>
+            <div class="stream-stats">
+              <span class="stat-pill" id="proxyStatus">DIRECT</span>
+            </div>
+          </div>
+
+          <div class="overlay-center" id="playPauseOverlay">
+            <i class="ri-play-fill icon-huge"></i>
+          </div>
+
+          <div class="overlay-bottom">
+            <div class="controls-row">
+              <button id="btnPlayPause" class="ctrl-btn" aria-label="Play/Pause"><i class="ri-pause-line"></i></button>
+              <button id="btnMute" class="ctrl-btn" aria-label="Mute/Unmute"><i class="ri-volume-up-line"></i></button>
+              <span class="live-label">LIVE TV</span>
+              <div class="flex-spacer"></div>
+              <button id="btnToggleProxy" class="ctrl-btn" aria-label="Toggle Flask Proxy (CORS fix)"><i class="ri-shield-check-line"></i></button>
+              <button id="btnToggleFit" class="ctrl-btn" aria-label="Toggle Aspect Ratio (Fit / Draw Fullscreen)"><i class="ri-aspect-ratio-line"></i></button>
+              <button id="btnPip" class="ctrl-btn" aria-label="PiP Mode"><i class="ri-picture-in-picture-2-line"></i></button>
+              <button id="btnFullscreen" class="ctrl-btn" aria-label="Fullscreen"><i class="ri-fullscreen-line"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- JioTV Horizontal Category Tabs -->
+    <nav class="category-strip-wrapper" aria-label="Channel Categories">
+      <div class="category-strip" id="categoryStrip">
+        <button class="cat-tab active" data-cat="All">
+          <i class="ri-apps-2-fill"></i>
+          <span>For You</span>
+        </button>
+        <button class="cat-tab" data-cat="Live TV">
+          <i class="ri-broadcast-line"></i>
+          <span>Live TV</span>
+        </button>
+        <button class="cat-tab" data-cat="Movies">
+          <i class="ri-film-line"></i>
+          <span>Movies</span>
+        </button>
+        <button class="cat-tab" data-cat="Sports">
+          <i class="ri-football-line"></i>
+          <span>Sports</span>
+        </button>
+        <button class="cat-tab" data-cat="News">
+          <i class="ri-newspaper-line"></i>
+          <span>News</span>
+        </button>
+        <button class="cat-tab" data-cat="Entertainment">
+          <i class="ri-tv-line"></i>
+          <span>Entertainment</span>
+        </button>
+        <button class="cat-tab" data-cat="Kids">
+          <i class="ri-bear-smile-line"></i>
+          <span>Kids</span>
+        </button>
+        <button class="cat-tab" data-cat="Music">
+          <i class="ri-music-2-line"></i>
+          <span>Music</span>
+        </button>
+        <button class="cat-tab" data-cat="Devotional">
+          <i class="ri-sun-line"></i>
+          <span>Devotional</span>
+        </button>
+        <button class="cat-tab" data-cat="Infotainment">
+          <i class="ri-compass-3-line"></i>
+          <span>Infotainment</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Channels Section with JioTV Card Matrix Grid -->
+    <section class="channel-section" id="channelsSection">
+      <div class="section-title-row">
+        <div class="section-title-wrap">
+          <h2 id="currentCategoryTitle">All Live Channels</h2>
+          <span class="active-filter-badge hidden" id="activeFilterBadge">Favorites</span>
+        </div>
+        <span class="channel-count" id="channelCount">Showing 0 Channels</span>
+      </div>
+
+      <div class="channel-grid" id="channelGrid">
+        <div class="jio-loading-spinner">
+          <div class="spinner"></div>
+          <p>Connecting to My Country TV Live Feeds...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Catch-up (EPG Guide) Section -->
+    <section class="catchup-section hidden" id="catchupSection">
+      <div class="section-title-row">
+        <h2>Catch-up TV Guide</h2>
+        <span class="channel-count">7 Days Past Broadcasts</span>
+      </div>
+      <div class="catchup-card">
+        <div class="catchup-header">
+          <div class="catchup-channel-badge" id="epgChannelBadge">
+            <span id="epgCurrentName">Select a Channel</span>
+          </div>
+          <div class="catchup-day-pills">
+            <button class="day-pill active">Today</button>
+            <button class="day-pill">Yesterday</button>
+            <button class="day-pill">2 Days Ago</button>
+          </div>
+        </div>
+        <div class="epg-timeline" id="epgTimeline">
+          <!-- Timeline entries rendered dynamically -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- JioTV 5-Tab Bottom Navigation Bar -->
+  <footer class="jio-bottom-bar" role="navigation" aria-label="Bottom Navigation">
+    <button class="bar-tab active" data-tab="home" id="tabNavHome">
+      <i class="ri-home-5-fill"></i>
+      <span>Home</span>
+    </button>
+    <button class="bar-tab" data-tab="live" id="tabNavLive">
+      <i class="ri-tv-fill"></i>
+      <span>Live TV</span>
+    </button>
+    <button class="bar-tab" data-tab="catchup" id="tabNavCatchup">
+      <i class="ri-history-line"></i>
+      <span>Catch-up</span>
+    </button>
+    <button class="bar-tab" data-tab="favorites" id="tabNavFavorites">
+      <i class="ri-heart-3-line"></i>
+      <span>Favorites</span>
+    </button>
+    <button class="bar-tab" data-tab="account" id="tabNavAccount">
+      <i class="ri-user-3-line"></i>
+      <span>Account</span>
+    </button>
+  </footer>
+
+  <!-- Account Settings Side Drawer Modal -->
+  <div class="modal-backdrop hidden" id="accountDrawerModal">
+    <div class="modal-card account-drawer-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="jio-circle-sm"><i class="ri-user-settings-fill" style="color: var(--jio-red);"></i></span>
+          <h3>Account & Settings</h3>
+        </div>
+        <button id="btnCloseAccountDrawer" class="close-btn" aria-label="Close Account Settings"><i class="ri-close-line"></i></button>
+      </div>
+
+      <div class="modal-body account-drawer-body">
+        <!-- User Profile Card -->
+        <div class="account-profile-card">
+          <div class="account-avatar-circle" id="drawerAvatarCircle">
+            <i class="ri-user-fill"></i>
+          </div>
+          <div class="account-user-meta">
+            <h4 id="drawerUserName">Guest User</h4>
+            <p id="drawerUserPhone">+91 Not Logged In</p>
+            <span class="account-sub-badge" id="drawerSubBadge">10 Days Free Plan Active</span>
+          </div>
+          <button class="btn-profile-login" id="drawerBtnLoginTrigger">
+            <i class="ri-login-box-line"></i> <span>Login</span>
+          </button>
+        </div>
+
+        <!-- Account Settings Menu List -->
+        <div class="settings-group">
+          <!-- 1. Dark Mode / Light Mode Toggle -->
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <div class="settings-icon-box" style="background: rgba(109, 94, 252, 0.15); color: #818cf8;">
+                <i class="ri-contrast-2-line" id="themeToggleIcon"></i>
+              </div>
+              <div class="settings-item-text">
+                <span class="settings-item-title">App Theme</span>
+                <span class="settings-item-desc" id="themeStatusLabel">Dark Mode Active</span>
+              </div>
+            </div>
+            <label class="switch-toggle" aria-label="Toggle Dark Mode / Light Mode">
+              <input type="checkbox" id="themeToggleCheckbox" checked />
+              <span class="slider-round"></span>
+            </label>
+          </div>
+
+          <!-- 2. My Subscription -->
+          <div class="settings-item cursor-pointer" id="drawerMenuSubscription">
+            <div class="settings-item-left">
+              <div class="settings-icon-box" style="background: rgba(250, 14, 14, 0.15); color: #ef4444;">
+                <i class="ri-vip-crown-fill"></i>
+              </div>
+              <div class="settings-item-text">
+                <span class="settings-item-title">My Subscription</span>
+                <span class="settings-item-desc" id="drawerSubDesc">10 Days Free Plan • 10,000+ Channels</span>
+              </div>
+            </div>
+            <i class="ri-arrow-right-s-line arrow-nav"></i>
+          </div>
+
+          <!-- 3. Service & Feedback -->
+          <div class="settings-item cursor-pointer" id="drawerMenuFeedback">
+            <div class="settings-item-left">
+              <div class="settings-icon-box" style="background: rgba(34, 211, 238, 0.15); color: #22d3ee;">
+                <i class="ri-customer-service-2-line"></i>
+              </div>
+              <div class="settings-item-text">
+                <span class="settings-item-title">Service & Feedback</span>
+                <span class="settings-item-desc">Report stream issues, request channels</span>
+              </div>
+            </div>
+            <i class="ri-arrow-right-s-line arrow-nav"></i>
+          </div>
+
+          <!-- 4. App Version Information -->
+          <div class="settings-item">
+            <div class="settings-item-left">
+              <div class="settings-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                <i class="ri-information-line"></i>
+              </div>
+              <div class="settings-item-text">
+                <span class="settings-item-title">App Version</span>
+                <span class="settings-item-desc">My Country TV v2.4.0 (JioTV Edition)</span>
+              </div>
+            </div>
+            <span class="badge-version">v2.4.0</span>
+          </div>
+
+          <!-- 5. Android App Download & Connect -->
+          <div class="settings-item cursor-pointer" id="drawerMenuAndroidApp">
+            <div class="settings-item-left">
+              <div class="settings-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                <i class="ri-android-fill"></i>
+              </div>
+              <div class="settings-item-text">
+                <span class="settings-item-title">Android App APK</span>
+                <span class="settings-item-desc">Install native app on Phone, Tablet or Android TV</span>
+              </div>
+            </div>
+            <i class="ri-arrow-right-s-line arrow-nav"></i>
+          </div>
+        </div>
+
+        <!-- Logout / Sign-In Action Row -->
+        <div class="account-actions-row">
+          <button class="btn-drawer-logout hidden" id="drawerBtnLogout">
+            <i class="ri-logout-box-r-line"></i> Logout from Account
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Number & OTP Login Modal (Mobile number login only, no Google login) -->
+  <div class="modal-backdrop hidden" id="authModal">
+    <div class="modal-card auth-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="jio-circle-sm">MCTV</span>
+          <h3 id="authModalTitle">Sign In with Mobile Number</h3>
+        </div>
+        <button id="btnCloseAuthModal" class="close-btn" aria-label="Close Modal"><i class="ri-close-line"></i></button>
+      </div>
+
+      <div class="modal-body auth-modal-body">
+        <!-- Step 1: Mobile Phone Number Input -->
+        <div id="authStepPhone" class="auth-step">
+          <div class="auth-hero-icon">
+            <i class="ri-smartphone-line"></i>
+          </div>
+          <h4>Enter Your Mobile Number</h4>
+          <p class="auth-subtitle">We will send a 4-digit verification code (OTP) via SMS.</p>
+
+          <div class="phone-input-group">
+            <span class="country-code">🇮🇳 +91</span>
+            <input type="tel" id="phoneNumberInput" placeholder="9876543210" maxlength="10" inputmode="numeric" />
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-jio btn-block" id="btnSendOtp">
+              <i class="ri-send-plane-fill"></i> Get OTP
+            </button>
+          </div>
+          <p class="auth-privacy-note">By continuing, you agree to My Country TV Terms & Privacy Policy.</p>
+        </div>
+
+        <!-- Step 2: OTP Verification -->
+        <div id="authStepOtp" class="auth-step hidden">
+          <div class="auth-hero-icon" style="color: #22d3ee;">
+            <i class="ri-shield-keyhole-line"></i>
+          </div>
+          <h4>Verify OTP Code</h4>
+          <p class="auth-subtitle">Enter the 4-digit code sent to <strong id="displayPhoneNum">+91 9876543210</strong></p>
+
+          <div class="otp-inputs">
+            <input type="text" class="otp-digit" maxlength="1" data-index="0" inputmode="numeric" />
+            <input type="text" class="otp-digit" maxlength="1" data-index="1" inputmode="numeric" />
+            <input type="text" class="otp-digit" maxlength="1" data-index="2" inputmode="numeric" />
+            <input type="text" class="otp-digit" maxlength="1" data-index="3" inputmode="numeric" />
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-jio btn-block" id="btnVerifyOtp">
+              <i class="ri-checkbox-circle-fill"></i> Verify & Sign In
+            </button>
+            <button class="btn-secondary btn-block" id="btnResendOtp">Resend OTP Code</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Logged In State -->
+        <div id="authStepSuccess" class="auth-step hidden text-center">
+          <div class="success-icon-big"><i class="ri-checkbox-circle-fill"></i></div>
+          <h3>Successfully Logged In!</h3>
+          <p id="loggedInPhoneText" class="auth-subtitle">+91 98765 43210</p>
+          <div class="modal-actions" style="margin-top: 18px;">
+            <button class="btn-jio btn-block" id="btnAuthSuccessClose">Continue Watching TV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Service & Feedback Modal -->
+  <div class="modal-backdrop hidden" id="feedbackModal">
+    <div class="modal-card feedback-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="jio-circle-sm"><i class="ri-customer-service-2-fill" style="color: #22d3ee;"></i></span>
+          <h3>Service & Feedback</h3>
+        </div>
+        <button id="btnCloseFeedbackModal" class="close-btn" aria-label="Close Feedback"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="modal-body feedback-modal-body">
+        <p class="feedback-intro">Have a channel request or playback issue? Let our 24/7 technical team know:</p>
+        <div class="feedback-field">
+          <label for="feedbackTopic">Topic:</label>
+          <select id="feedbackTopic">
+            <option value="Stream Buffering / Playback Issue">Stream Buffering / Playback Issue</option>
+            <option value="Request New Channel">Request New Channel</option>
+            <option value="Subscription or Payment Inquiry">Subscription or Payment Inquiry</option>
+            <option value="App Improvement Suggestion">App Improvement Suggestion</option>
+          </select>
+        </div>
+        <div class="feedback-field">
+          <label for="feedbackMessage">Your Message:</label>
+          <textarea id="feedbackMessage" rows="4" placeholder="Describe the channel name or issue in detail..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-jio btn-block" id="btnSubmitFeedback">
+            <i class="ri-send-plane-2-fill"></i> Submit Feedback
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Android Mobile App Install & Download Modal -->
+  <div class="modal-backdrop hidden" id="mobileAppModal">
+    <div class="modal-card mobile-modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="jio-circle-sm"><i class="ri-android-fill" style="font-size:1.1rem; color:#10b981;"></i></span>
+          <h3>Download & Install Android App</h3>
+        </div>
+        <button id="btnCloseMobileModal" class="close-btn" aria-label="Close Modal"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="modal-body mobile-install-body">
+        
+        <!-- Direct 1-Click Install Banner (if PWA prompt available on Android Chrome) -->
+        <div class="pwa-oneclick-banner hidden" id="pwaDirectBanner">
+          <div class="pwa-icon-box">
+            <img src="/static/img/logo-192.png" alt="My Country TV" class="pwa-app-icon" />
+          </div>
+          <div class="pwa-info">
+            <h4>Install My Country TV on Android</h4>
+            <p>1-Tap install to your Android Home Screen with native app window.</p>
+          </div>
+          <button id="btnPwaDirectInstall" class="btn-jio btn-install-lg">
+            <i class="ri-download-cloud-2-line"></i> Install Now
+          </button>
+        </div>
+
+        <!-- Android Quick QR Code Connect & Dual-Network (LAN & WAN) -->
+        <div class="android-qr-section">
+          <div class="qr-preview-box">
+            <img src="/api/qr-code?mode=lan" alt="Scan to open on Android Phone" class="qr-code-img" id="qrCodeImg" />
+            <span class="qr-caption" id="qrCaptionText"><i class="ri-qr-scan-2-line"></i> Scan with Phone Camera</span>
+          </div>
+          <div class="qr-desc-box">
+            <div class="network-badge-row">
+              <span class="step-badge">Dual-Network Ready (LAN & WAN)</span>
+            </div>
+
+            <h4 id="networkTitleDesc">Scan QR or Connect on Mobile</h4>
+            <p id="networkExplainerText">
+              Scan with your mobile camera or browser to instantly open My Country TV on your phone.
+            </p>
+          </div>
+        </div>
+
+        <!-- Direct Standalone APK Download Option -->
+        <div class="install-options-tabs">
+          <div class="install-card active-card">
+            <div class="install-step-header">
+              <span class="step-badge" style="background: rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.35);">Direct Download • Ready to Install</span>
+              <h4>Download Standalone Android APK (.APK)</h4>
+            </div>
+            <p class="install-desc">Install directly on any Android Phone, Tablet, or Android TV Box without Android Studio:</p>
+            <div class="download-action-row" style="flex-wrap: wrap; gap: 10px;">
+              <a href="/download/apk" class="btn-download-apk" id="btnDownloadApkDirect" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff;">
+                <i class="ri-android-line"></i> Download Android APK (.apk)
+              </a>
+              <a href="/download/android-project" class="btn-download-apk" id="btnDownloadAndroidZip" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);">
+                <i class="ri-file-zip-line"></i> Source Code (.ZIP)
+              </a>
+              <span class="download-note" style="width: 100%;">Includes auto-network discovery, cinema full-screen player, and remote D-Pad navigation.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer-info">
+        <i class="ri-smartphone-line"></i> <span>Direct mobile access with full-screen cinema video player.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subscription Plans & UPI Payment Modal -->
+  <div class="modal-backdrop hidden" id="subscriptionModal">
+    <div class="modal-card sub-modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="jio-circle-sm"><i class="ri-vip-crown-fill" style="color: #ff0000;"></i></span>
+          <h3 id="subModalTitle">My Country TV Premium Plans</h3>
+        </div>
+        <button id="btnCloseSubModal" class="close-btn" aria-label="Close Modal"><i class="ri-close-line"></i></button>
+      </div>
+
+      <div class="modal-body sub-modal-body">
+
+        <!-- Plans Grid -->
+        <div class="plans-section" id="plansSelectionView">
+          <div class="plans-header-text">
+            <h4>My Country TV Subscription Plans</h4>
+            <p>10 Days Free Plan with 10,000+ live channels • Buy monthly plan after 10 days</p>
+          </div>
+
+          <!-- Active Plan Status Banner -->
+          <div class="plan-status-banner banner-active-free" id="planStatusBanner">
+            <div class="plan-status-banner-content">
+              <span class="status-banner-icon"><i class="ri-gift-fill"></i></span>
+              <div class="status-banner-text">
+                <strong id="statusBannerTitle">10 Days Free Plan Active (10,000+ Channels)</strong>
+                <p id="statusBannerMsg">You have access to all 10,000+ live channels for 10 days. After 10 days, buy a monthly plan to continue watching.</p>
+              </div>
+            </div>
+            <div class="status-banner-tag" id="statusBannerTag">10,000 Channels</div>
+          </div>
+
+          <div class="plans-grid">
+            <!-- Plan 0: 10 Days Free Plan ₹0 -->
+            <div class="plan-card free-plan-card" data-plan="free_trial" data-price="0">
+              <div class="free-plan-ribbon"><i class="ri-gift-fill"></i> FREE TRIAL</div>
+              <div class="plan-header">
+                <span class="plan-duration">10 Days Free</span>
+                <div class="price-wrap">
+                  <span class="plan-price" style="color: #10b981;">₹0</span>
+                  <span class="plan-savings" style="color: #34d399;">Free Trial</span>
+                </div>
+              </div>
+              <p class="plan-desc">10 Days 100% Free Plan with 10,000+ live channels unlocked.</p>
+              <ul class="plan-features">
+                <li><i class="ri-check-line"></i> All 10,000+ Channels Unlocked</li>
+                <li><i class="ri-check-line"></i> Full HD 1080p High-Speed Feeds</li>
+                <li><i class="ri-check-line"></i> Entertainment, Movies & Sports</li>
+                <li><i class="ri-check-line"></i> No Card or Payment Required</li>
+              </ul>
+              <div class="plan-action-container">
+                <div class="plan-status-pill" id="freePlanCardStatus">
+                  <span class="badge-free-active"><i class="ri-checkbox-circle-fill"></i> Active Free Plan</span>
+                </div>
+                <button class="btn-select-plan btn-free-plan hidden" id="btnClaimFreePlan">Activate Free Plan</button>
+              </div>
+            </div>
+
+            <!-- Plan 1: 1 Month ₹99 (Monthly Plan) -->
+            <div class="plan-card monthly-pack-card" data-plan="1m" data-price="99">
+              <div class="monthly-plan-ribbon"><i class="ri-calendar-line"></i> MONTHLY PLAN</div>
+              <div class="plan-header">
+                <span class="plan-duration">1 Month</span>
+                <div class="price-wrap">
+                  <span class="plan-price">₹99</span>
+                  <span class="plan-savings" style="color:#60a5fa;">Monthly Pack</span>
+                </div>
+              </div>
+              <p class="plan-desc">Full 30-day access to all 10,000+ channels after 10 days free trial.</p>
+              <ul class="plan-features">
+                <li><i class="ri-check-line"></i> All 10,000+ Channels Unlocked</li>
+                <li><i class="ri-check-line"></i> Full HD 1080p Streaming</li>
+                <li><i class="ri-check-line"></i> Zero buffer VIP high-speed servers</li>
+                <li><i class="ri-check-line"></i> Instant UPI Activation</li>
+              </ul>
+              <button class="btn-select-plan" data-plan="1m">Select 1 Month (₹99)</button>
+            </div>
+
+            <!-- Plan 2: 3 Months ₹299 (Popular) -->
+            <div class="plan-card featured-plan" data-plan="3m" data-price="299">
+              <div class="popular-ribbon"><i class="ri-fire-fill"></i> MOST POPULAR</div>
+              <div class="plan-header">
+                <span class="plan-duration">3 Months</span>
+                <div class="price-wrap">
+                  <span class="plan-price">₹299</span>
+                  <span class="plan-savings">Save ~₹30</span>
+                </div>
+              </div>
+              <p class="plan-desc">Best quarterly package for non-stop shows, movies & sports.</p>
+              <ul class="plan-features">
+                <li><i class="ri-check-line"></i> All Channels Unlocked for 90 Days</li>
+                <li><i class="ri-check-line"></i> Multi-device streaming support</li>
+                <li><i class="ri-check-line"></i> Zero buffer VIP high-speed servers</li>
+                <li><i class="ri-check-line"></i> Priority live streaming feeds</li>
+              </ul>
+              <button class="btn-select-plan btn-primary-plan" data-plan="3m">Select 3 Months (₹299)</button>
+            </div>
+
+            <!-- Plan 3: 1 Year ₹1,199 (Best Value) -->
+            <div class="plan-card" data-plan="1y" data-price="1199">
+              <div class="best-value-ribbon"><i class="ri-award-fill"></i> BEST VALUE</div>
+              <div class="plan-header">
+                <span class="plan-duration">1 Year</span>
+                <div class="price-wrap">
+                  <span class="plan-price">₹1,199</span>
+                  <span class="plan-savings">Only ~₹99/mo</span>
+                </div>
+              </div>
+              <p class="plan-desc">Complete 365 days of uninterrupted live TV access.</p>
+              <ul class="plan-features">
+                <li><i class="ri-check-line"></i> 365 Days 100% Unlocked Channels</li>
+                <li><i class="ri-check-line"></i> Unlimited Android Phone & TV Access</li>
+                <li><i class="ri-check-line"></i> Priority live streaming feeds</li>
+                <li><i class="ri-check-line"></i> Maximum Annual Savings</li>
+              </ul>
+              <button class="btn-select-plan" data-plan="1y">Select 1 Year (₹1,199)</button>
+            </div>
+          </div>
+
+          <!-- Plans Grid End -->
+        </div>
+
+        <!-- Step 2: UPI Payment View (Deep Link / Apps & QR Code) -->
+        <div class="upi-payment-section hidden" id="upiPaymentView">
+          <div class="upi-header">
+            <button class="btn-back-plans" id="btnBackToPlans"><i class="ri-arrow-left-line"></i> Change Plan</button>
+            <div class="selected-plan-summary">
+              <span id="summaryPlanName">3 Months Pack</span>
+              <strong id="summaryPlanAmount">₹299</strong>
+            </div>
+          </div>
+
+          <div class="upi-payment-layout">
+            <!-- Left: QR Code for UPI scanning -->
+            <div class="upi-qr-box">
+              <div class="qr-frame">
+                <img id="upiQrCodeImg" src="" alt="Scan UPI QR Code to Pay" />
+              </div>
+              <p class="qr-instruction"><i class="ri-qr-scan-2-line"></i> Scan with any UPI App (GPay, PhonePe, Paytm, BHIM)</p>
+            </div>
+
+            <!-- Right: Pay via Installed UPI Apps + VPA Details -->
+            <div class="upi-details-box">
+              <div class="upi-app-triggers">
+                <span class="upi-methods-title">Pay Directly Using UPI Apps:</span>
+                <div class="upi-apps-row">
+                  <a id="btnPayUpiDirect" href="#" class="upi-app-btn upi-generic" target="_blank" aria-label="Open Any UPI App">
+                    <i class="ri-smartphone-line"></i> Open Any UPI App
+                  </a>
+                  <a id="btnPayGPay" href="#" class="upi-app-btn upi-gpay" target="_blank" aria-label="Pay with Google Pay">
+                    <i class="ri-google-fill"></i> Google Pay
+                  </a>
+                  <a id="btnPayPhonePe" href="#" class="upi-app-btn upi-phonepe" target="_blank" aria-label="Pay with PhonePe">
+                    <i class="ri-flashlight-fill"></i> PhonePe
+                  </a>
+                  <a id="btnPayPaytm" href="#" class="upi-app-btn upi-paytm" target="_blank" aria-label="Pay with Paytm">
+                    <i class="ri-wallet-3-fill"></i> Paytm / BHIM
+                  </a>
+                </div>
+              </div>
+
+              <!-- UPI VPA ID Box with 1-click copy -->
+              <div class="upi-vpa-copy-box">
+                <label>Merchant UPI ID (VPA):</label>
+                <div class="vpa-input-group">
+                  <input type="text" id="upiVpaDisplay" readonly value="mycountrytv@upi" />
+                  <button id="btnCopyVpa" class="copy-btn" aria-label="Copy UPI ID"><i class="ri-file-copy-line"></i> Copy</button>
+                </div>
+              </div>
+
+              <!-- Confirmation Action -->
+              <div class="payment-confirm-box">
+                <p class="confirm-hint"><i class="ri-shield-check-fill" style="color:#10b981;"></i> After completing the payment in your UPI app, click below to activate your channels instantly:</p>
+                <button id="btnConfirmUpiPayment" class="btn-jio btn-confirm-pay">
+                  <i class="ri-checkbox-circle-line"></i> I Have Paid - Activate All Channels
+                </button>
+                <div class="demo-testing-note">
+                  <span>Demo Mode: Click the button above to simulate instant payment verification and channel unlocking.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Success Confirmation View -->
+        <div class="sub-success-view hidden" id="subSuccessView">
+          <div class="success-icon-big"><i class="ri-checkbox-circle-fill"></i></div>
+          <h3 id="subSuccessTitle">Subscription Activated Successfully!</h3>
+          <p id="subSuccessMsg">All 10,000+ live channels have been fully unlocked with high-speed streaming.</p>
+          <div class="sub-details-card" id="subDetailsCard">
+            <!-- Injected dynamically -->
+          </div>
+          <button class="btn-jio btn-watch-now" id="btnSubSuccessClose">
+            <i class="ri-play-fill"></i> Start Watching Channels
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Testing quick-switch footer -->
+      <div class="modal-footer-sub">
+        <span>Trial Testing:</span>
+        <button id="btnTestExpireTrial" class="btn-text-sub" aria-label="Simulate Trial Expired">Simulate 10 Days Expired</button>
+        <span>•</span>
+        <button id="btnTestResetTrial" class="btn-text-sub" aria-label="Reset 10 Days Free Trial">Reset 10 Days Free Plan</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}?v=2.0"></script>
+</body>
+</html>

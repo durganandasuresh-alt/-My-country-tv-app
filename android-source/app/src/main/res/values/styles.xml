@@ -1,0 +1,7 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.MyCountryTV" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#0b0c15</item>
+        <item name="android:statusBarColor">#0b0c15</item>
+        <item name="android:navigationBarColor">#0b0c15</item>
+    </style>
+</resources>

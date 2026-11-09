@@ -1,0 +1,21 @@
+R_DEF: Internal format may change without notice
+local
+drawable ic_launcher
+id btnAutoDetectIp
+id btnChangeIp
+id btnOfflineStructure
+id btnRetry
+id btnSwitchWan
+id customViewContainer
+id errorLayout
+id loadingLayout
+id progressBar
+id rootContainer
+id txtIpStatus
+id txtLoadingStatus
+id txtNetworkStatus
+id webView
+layout activity_main
+mipmap ic_launcher
+string app_name
+style Theme.MyCountryTV

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootContainer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="false"
+    android:background="#0b0c15">
+
+    <!-- Primary Video & TV Interface WebView (Edge-to-Edge with Auto-Adjust Padding) -->
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="false"
+        android:overScrollMode="never" />
+
+    <!-- Container for Fullscreen HTML5 Video playback (Pure Black full bleed) -->
+    <FrameLayout
+        android:id="@+id/customViewContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:fitsSystemWindows="false"
+        android:background="#000000" />
+
+    <!-- Loading Bar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:progressDrawable="@android:drawable/progress_horizontal"
+        android:indeterminate="false"
+        android:max="100"
+        android:visibility="gone" />
+
+    <!-- Loading / Splash Screen (Visible on launch until main TV interface renders) -->
+    <LinearLayout
+        android:id="@+id/loadingLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#0b0c15"
+        android:visibility="visible">
+
+        <!-- App Logo / Icon -->
+        <FrameLayout
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:background="@drawable/ic_launcher"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="My Country TV"
+            android:textColor="#ffffff"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:id="@+id/txtLoadingStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Loading Live TV Channels..."
+            android:textColor="#9ca3af"
+            android:textSize="13sp"
+            android:layout_marginBottom="24dp" />
+
+        <ProgressBar
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:indeterminate="true" />
+    </LinearLayout>
+
+    <!-- Network Offline / Server Error Screen with Offline TV Structure fallback -->
+    <LinearLayout
+        android:id="@+id/errorLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp"
+        android:background="#0b0c15"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="My Country TV"
+            android:textColor="#ffffff"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/txtNetworkStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📡 Network is Offline / Reconnecting..."
+            android:textColor="#ef4444"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/txtIpStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Auto IP: Detecting network..."
+            android:textColor="#9ca3af"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:layout_marginBottom="20dp" />
+
+        <!-- 1. Offline TV Structure Fallback -->
+        <Button
+            android:id="@+id/btnOfflineStructure"
+            android:layout_width="240dp"
+            android:layout_height="48dp"
+            android:text="📺 Show TV Structure (Offline)"
+            android:background="#6366f1"
+            android:textColor="#ffffff"
+            android:layout_marginBottom="10dp" />
+
+        <!-- 2. Auto Set IP & Connect -->
+        <Button
+            android:id="@+id/btnAutoDetectIp"
+            android:layout_width="240dp"
+            android:layout_height="48dp"
+            android:text="⚡ Auto Set IP Address"
+            android:background="#10b981"
+            android:textColor="#ffffff"
+            android:layout_marginBottom="10dp" />
+
+        <!-- 3. Switch to WAN (Mobile 4G/5G / Internet) -->
+        <Button
+            android:id="@+id/btnSwitchWan"
+            android:layout_width="240dp"
+            android:layout_height="48dp"
+            android:text="🌍 Run with WAN Network"
+            android:background="#2563eb"
+            android:textColor="#ffffff"
+            android:layout_marginBottom="10dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnRetry"
+                android:layout_width="115dp"
+                android:layout_height="42dp"
+                android:text="Reconnect"
+                android:background="#1f2438"
+                android:textColor="#ffffff"
+                android:layout_marginEnd="10dp" />
+
+            <Button
+                android:id="@+id/btnChangeIp"
+                android:layout_width="115dp"
+                android:layout_height="42dp"
+                android:text="Settings"
+                android:background="#1f2438"
+                android:textColor="#ffffff" />
+        </LinearLayout>
+    </LinearLayout>
+
+</FrameLayout>

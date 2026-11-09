@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">My Country TV</string>
+    <style name="Theme.MyCountryTV" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#0b0c15</item>
+        <item name="android:statusBarColor">#0b0c15</item>
+        <item name="android:navigationBarColor">#0b0c15</item>
+    </style>
+</resources>

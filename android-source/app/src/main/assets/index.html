@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Country TV - Mobile & TV Network Structure (LAN & WAN)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    body {
+      background: #0b0c15;
+      color: #e5e7eb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 580px;
+      width: 300%;
+      margin: 0 auto;
+    }
+
+    /* TV Structure Header */
+    .header-card {
+      background: #141724;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding:12px 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #fff;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      color: #ffffff;
+      font-weight: 800;
+    }
+
+    .net-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      margin-bottom: 12px;
+    }
+
+    .net-banner.wan {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+
+    /* Dual Network Switching Tabs */
+    .net-tabs {
+      display: flex;
+      gap: 6px;
+      background: #080910;
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .net-tab {
+      flex: 1;
+      padding: 9px 8px;
+      background: transparent;
+      border: none;
+      color: #9ca3af;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .net-tab.active {
+      background: #10b981;
+      color: #0b0c15;
+    }
+
+    .net-tab.active.wan-tab {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    /* Action Buttons */
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: #10b981;
+      color: #0b0c15;
+      grid-column: span 2;
+    }
+
+    .btn-primary.wan {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .btn-auto-ip {
+      background: #6366f1;
+      color: #ffffff;
+    }
+
+    .btn-secondary {
+      background: #1f2438;
+      color: #e5e7eb;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .net-status-box {
+      background: #080910;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.78rem;
+      text-align: left;
+      margin-bottom: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .net-status-box code {
+      color: #10b981;
+      font-weight: 700;
+      word-break: break-all;
+    }
+
+    /* TV Structure Layout Card (Categories & Live Channels) */
+    .structure-card {
+      background: #141724;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: left;
+      margin-bottom: 14px;
+    }
+
+    .structure-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .badge-pill {
+      font-size: 0.70rem;
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    /* Category Pill Strip */
+    .cat-strip {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+
+    .cat-pill {
+      padding: 5px 10px;
+      background: #1f2438;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      font-size: 0.72rem;
+      color: #d1d5db;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .cat-pill.active {
+      background: #10b981;
+      color: #0b0c15;
+      font-weight: 700;
+    }
+
+    /* TV Channels Grid */
+    .channel-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .channel-item {
+      background: #0d101c;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .channel-item:hover {
+      border-color: #10b981;
+      transform: translateY(-2px);
+    }
+
+    .ch-logo-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #1f2438, #2a314d);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.82rem;
+      color: #10b981;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .ch-logo-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .ch-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ch-name {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ch-sub {
+      font-size: 0.68rem;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dot-live {
+      width: 6px;
+      height: 6px;
+      background: #ef4444;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #10b981;
+      color: #0b0c15;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 1000;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header-card">
+      <div class="brand-row">
+        <div class="logo">📺</div>
+        <h1>My Country TV</h1>
+      </div>
+      
+      <div class="net-banner" id="netBadge">
+        <span id="badgeIcon">🏠</span> <span id="badgeText">LAN Mode Active (Home Wi-Fi)</span>
+      </div>
+
+      <!-- Network Mode Tabs (LAN / WAN) -->
+      <div class="net-tabs">
+        <button class="net-tab active" id="tabLan" onclick="selectMode('lan')">🏠 LAN Mode (Wi-Fi)</button>
+        <button class="net-tab wan-tab" id="tabWan" onclick="selectMode('wan')">🌍 WAN Mode (Internet / 4G)</button>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="btn-group">
+        <a href="#" id="btnLaunch" class="btn btn-primary">
+          🚀 Open Live TV Stream
+        </a>
+        <button onclick="autoDetectIp()" class="btn btn-auto-ip">
+          ⚡ Auto Set IP
+        </button>
+        <button onclick="changeCustomUrl()" class="btn btn-secondary">
+          ⚙️ Change IP / URL
+        </button>
+      </div>
+
+      <div class="net-status-box">
+        <div><strong>Connected Server:</strong> <code id="serverUrl">Detecting...</code></div>
+        <div style="margin-top:4px; color:#9ca3af;" id="netDesc">LAN Mode: Local Wi-Fi playback for TV & Phones.</div>
+      </div>
+    </div>
+
+    <!-- TV Structure & Offline Channels View -->
+    <div class="structure-card">
+      <div class="structure-title">
+        <span>📺 Live TV Channels Structure</span>
+        <span class="badge-pill" id="chCountBadge">Offline Preview</span>
+      </div>
+
+      <!-- Category Filter Strip -->
+      <div class="cat-strip" id="catStrip">
+        <div class="cat-pill active" onclick="filterCat('All')">All (Featured)</div>
+        <div class="cat-pill" onclick="filterCat('Entertainment')">Entertainment</div>
+        <div class="cat-pill" onclick="filterCat('Movies')">Movies</div>
+        <div class="cat-pill" onclick="filterCat('News')">News</div>
+        <div class="cat-pill" onclick="filterCat('Sports')">Sports</div>
+      </div>
+
+      <!-- Channel Grid -->
+      <div class="channel-list" id="channelList">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toastMsg"></div>
+
+  <script>
+    const KEY_LAN = 'mycountrytv_lan_url';
+    const KEY_WAN = 'mycountrytv_wan_url';
+    const KEY_MODE = 'mycountrytv_net_mode';
+
+    let lanUrl = localStorage.getItem(KEY_LAN) || 'http://10.153.49.149:5000';
+    let wanUrl = localStorage.getItem(KEY_WAN) || 'http://152.57.128.130:5000';
+    let currentMode = localStorage.getItem(KEY_MODE) || 'lan';
+
+    // Built-in TV Channels Structure for instant Offline Display
+    const OFFLINE_TV_CHANNELS = [
+      {
+        name: "Star Maa",
+        category: "Entertainment",
+        language: "Telugu",
+        logo: "https://i.imgur.com/5c9PVS0.png",
+        logo_char: "SM",
+        stream: "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:starmaa1.smil/chunklist_b2628000.m3u8"
+      },
+      {
+        name: "Star Maa Movies",
+        category: "Movies",
+        language: "Telugu",
+        logo: "https://dtil.tmsimg.com/assets/s143826_ld_h15_aa.png?lock=720x540",
+        logo_char: "MM",
+        stream: "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:maamovies.smil/chunklist_b2628000.m3u8"
+      },
+      {
+        name: "Zee Telugu",
+        category: "Entertainment",
+        language: "Telugu",
+        logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_ZEE_TELUGU/images/LOGO_HD/LOGO_HD_image.png",
+        logo_char: "ZT",
+        stream: "https://raw.githubusercontent.com/amazeyourself/adaptive-streams/refs/heads/main/streams/in/YuppTV/ZeeTeluguHD.m3u8"
+      },
+      {
+        name: "ETV Telugu",
+        category: "Entertainment",
+        language: "Telugu",
+        logo: "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_ETV_HD/images/LOGO_HD/image.png",
+        logo_char: "ET",
+        stream: "https://mumbai-edge.smartplaytv.in/ETVHD/index.m3u8"
+      },
+      {
+        name: "Aaj Tak",
+        category: "News",
+        language: "Hindi",
+        logo_char: "AT",
+        stream: "https://feeds.intoday.in/aajtak/api/aajtakhd/master.m3u8"
+      },
+      {
+        name: "NDTV 24x7",
+        category: "News",
+        language: "English",
+        logo_char: "ND",
+        stream: ""
+      },
+      {
+        name: "Sports Live HD",
+        category: "Sports",
+        language: "English",
+        logo_char: "SP",
+        stream: ""
+      },
+      {
+        name: "Cinema World",
+        category: "Movies",
+        language: "General",
+        logo_char: "CW",
+        stream: ""
+      }
+    ];
+
+    let activeCat = "All";
+
+    function showToast(msg) {
+      const t = document.getElementById("toastMsg");
+      t.textContent = msg;
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 2500);
+    }
+
+    function selectMode(mode) {
+      currentMode = mode;
+      localStorage.setItem(KEY_MODE, mode);
+
+      const tabLan = document.getElementById('tabLan');
+      const tabWan = document.getElementById('tabWan');
+      const badge = document.getElementById('netBadge');
+      const btnLaunch = document.getElementById('btnLaunch');
+
+      if (mode === 'wan') {
+        tabLan.classList.remove('active');
+        tabWan.classList.add('active');
+        badge.className = "net-banner wan";
+        document.getElementById('badgeIcon').textContent = "🌍";
+        document.getElementById('badgeText').textContent = "WAN Mode Active (Internet / 4G/5G)";
+        btnLaunch.className = "btn btn-primary wan";
+      } else {
+        tabLan.classList.add('active');
+        tabWan.classList.remove('active');
+        badge.className = "net-banner";
+        document.getElementById('badgeIcon').textContent = "🏠";
+        document.getElementById('badgeText').textContent = "LAN Mode Active (Home Wi-Fi)";
+        btnLaunch.className = "btn btn-primary";
+      }
+      updateView();
+    }
+
+    function updateView() {
+      const activeUrl = currentMode === 'lan' ? lanUrl : wanUrl;
+      document.getElementById('serverUrl').textContent = activeUrl;
+      const btn = document.getElementById('btnLaunch');
+      btn.href = activeUrl;
+      btn.textContent = currentMode === 'wan' ? '🚀 Run Live TV with WAN' : '🚀 Open Live TV (LAN)';
+
+      document.getElementById('netDesc').textContent = currentMode === 'lan'
+        ? 'LAN Mode: Local Wi-Fi streaming for TV & phones on the same router.'
+        : 'WAN Mode: Stream over cellular mobile data (4G/5G) or remote internet.';
+    }
+
+    function renderChannels() {
+      const listEl = document.getElementById('channelList');
+      listEl.innerHTML = '';
+
+      const filtered = OFFLINE_TV_CHANNELS.filter(c => {
+        if (activeCat === 'All') return true;
+        return c.category.toLowerCase() === activeCat.toLowerCase();
+      });
+
+      filtered.forEach(ch => {
+        const item = document.createElement('div');
+        item.className = 'channel-item';
+        const targetUrl = currentMode === 'lan' ? lanUrl : wanUrl;
+
+        item.onclick = () => {
+          showToast(`Switching to ${ch.name}...`);
+          window.location.href = targetUrl;
+        };
+
+        const logoContent = ch.logo
+          ? `<img src="${ch.logo}" alt="${ch.name}" onerror="this.parentNode.innerHTML='${ch.logo_char}'">`
+          : ch.logo_char;
+
+        item.innerHTML = `
+          <div class="ch-logo-avatar">${logoContent}</div>
+          <div class="ch-info">
+            <div class="ch-name">${ch.name}</div>
+            <div class="ch-sub"><span class="dot-live"></span> ${ch.category} • ${ch.language}</div>
+          </div>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    function filterCat(cat) {
+      activeCat = cat;
+      document.querySelectorAll('.cat-pill').forEach(el => {
+        el.classList.toggle('active', el.textContent.startsWith(cat));
+      });
+      renderChannels();
+    }
+
+    function autoDetectIp() {
+      showToast("🔍 Auto-detecting server IP on network...");
+      // Try current origin, then server-info
+      fetch('/api/server-info')
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.lan_url) {
+            lanUrl = data.lan_url;
+            localStorage.setItem(KEY_LAN, lanUrl);
+          }
+          if (data && data.wan_url) {
+            wanUrl = data.wan_url;
+            localStorage.setItem(KEY_WAN, wanUrl);
+          }
+          updateView();
+          showToast("✅ Auto Set IP Successful!");
+        })
+        .catch(() => {
+          // If window location host is valid
+          if (window.location.host && !window.location.host.includes("android_asset")) {
+            lanUrl = window.location.origin;
+            localStorage.setItem(KEY_LAN, lanUrl);
+            updateView();
+            showToast("✅ IP set to: " + lanUrl);
+          } else {
+            showToast("⚠️ Could not reach server. Using saved: " + (currentMode === 'lan' ? lanUrl : wanUrl));
+          }
+        });
+    }
+
+    function changeCustomUrl() {
+      const current = currentMode === 'lan' ? lanUrl : wanUrl;
+      const promptLabel = currentMode === 'lan' ? 'Enter Local LAN IP (e.g. 10.153.49.149:5000):' : 'Enter Public WAN IP or URL:';
+      const input = prompt(promptLabel, current);
+      if (input && input.trim()) {
+        let val = input.trim();
+        if (!val.startsWith('http://') && !val.startsWith('https://')) {
+          val = 'http://' + val;
+        }
+        if (!val.includes(':5000') && !val.includes('https://') && !val.split('://')[1].includes('/')) {
+          val = val + ':5000';
+        }
+        if (currentMode === 'lan') {
+          lanUrl = val;
+          localStorage.setItem(KEY_LAN, lanUrl);
+        } else {
+          wanUrl = val;
+          localStorage.setItem(KEY_WAN, wanUrl);
+        }
+        updateView();
+        showToast("Saved " + currentMode.toUpperCase() + " URL");
+      }
+    }
+
+    // Try auto-discovery on page load
+    fetch('/api/server-info')
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.lan_url) {
+          lanUrl = data.lan_url;
+          localStorage.setItem(KEY_LAN, lanUrl);
+        }
+        if (data && data.wan_url) {
+          wanUrl = data.wan_url;
+          localStorage.setItem(KEY_WAN, wanUrl);
+        }
+        updateView();
+      })
+      .catch(() => updateView());
+
+    selectMode(currentMode);
+    renderChannels();
+  </script>
+</body>
+
+</html>

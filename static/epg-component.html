@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EPG Component - TV Program Guide</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" />
+  <style>
+    :root {
+      --bg: #0b0d12;
+      --panel: #14171f;
+      --panel-2: #1b1f2a;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #eef1f6;
+      --muted: #9aa3b2;
+      --red: #e50914;
+      --red-soft: rgba(229, 9, 20, 0.14);
+      --green: #2ecc71;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* ===== EPG Component ===== */
+    .epg {
+      width: 100%;
+      max-width: 860px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    }
+
+    /* Channel header: logo + name */
+    .epg-channel {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      background: linear-gradient(180deg, var(--panel-2), var(--panel));
+      border-bottom: 1px solid var(--border);
+    }
+
+    .epg-logo {
+      width: 52px;
+      height: 52px;
+      flex: 0 0 52px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, .5);
+      background: linear-gradient(135deg, #e50914, #7a0508);
+      letter-spacing: .5px;
+    }
+
+    .epg-channel-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .epg-channel-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: .5px;
+      padding: 3px 7px;
+      border-radius: 20px;
+    }
+
+    .badge-hd {
+      background: rgba(255, 255, 255, .12);
+      color: #cbd5e1;
+    }
+
+    .badge-live {
+      background: var(--red-soft);
+      color: #ff5258;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .badge-live .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: .4;
+        transform: scale(.8);
+      }
+    }
+
+    .epg-channel-meta {
+      margin-top: 3px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .epg-now-clock {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .epg-now-clock .t {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .epg-now-clock .d {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    /* Program guide */
+    .epg-guide-title {
+      padding: 12px 20px 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .epg-list {
+      padding: 4px 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+
+    .epg-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .epg-list::-webkit-scrollbar-thumb {
+      background: var(--red);
+      border-radius: 4px;
+    }
+
+    .epg-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .epg-program {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-left: 3px solid transparent;
+      border-radius: 10px;
+      background: var(--panel-2);
+      cursor: pointer;
+      transition: border-color .2s, transform .15s, background .2s;
+    }
+
+    .epg-program:hover {
+      background: #232838;
+      transform: translateX(2px);
+    }
+
+    .epg-program .time {
+      flex: 0 0 118px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .epg-program .info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .epg-program .name {
+      font-size: 0.92rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .epg-program .desc {
+      font-size: 0.74rem;
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .epg-program .state {
+      flex: 0 0 auto;
+      font-size: 0.66rem;
+      font-weight: 800;
+      letter-spacing: .6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+
+    /* Past program */
+    .epg-program.past {
+      opacity: .55;
+    }
+
+    .epg-program.past .state {
+      background: rgba(255, 255, 255, .08);
+      color: var(--muted);
+    }
+
+    /* Upcoming program */
+    .epg-program.upcoming .state {
+      background: rgba(46, 204, 113, .15);
+      color: var(--green);
+    }
+
+    /* ===== LIVE program: highlighted with red border ===== */
+    .epg-program.live {
+      border: 2px solid var(--red);
+      border-radius: 12px;
+      background: linear-gradient(90deg, var(--red-soft), var(--panel-2) 60%);
+      box-shadow: 0 0 0 1px rgba(229, 9, 20, .25), 0 8px 24px rgba(229, 9, 20, .15);
+    }
+
+    .epg-program.live .state {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .epg-program.live .time {
+      color: #ff8a8e;
+    }
+
+    /* Progress bar inside live program */
+    .epg-progress {
+      margin-top: 7px;
+      height: 4px;
+      background: rgba(255, 255, 255, .12);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .epg-progress .fill {
+      height: 100%;
+      background: var(--red);
+      border-radius: 4px;
+      transition: width 1s linear;
+    }
+
+    @media (max-width: 560px) {
+      .epg-program .desc {
+        display: none;
+      }
+
+      .epg-program .time {
+        flex-basis: 92px;
+        font-size: 0.72rem;
+      }
+
+      .epg-now-clock {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="epg" id="epgComponent">
+    <!-- Channel header -->
+    <div class="epg-channel">
+      <div class="epg-logo" id="epgLogo">TV</div>
+      <div class="epg-channel-info">
+        <div class="epg-channel-name">
+          <span id="epgChannelName">Channel Name</span>
+          <span class="badge badge-hd">HD</span>
+          <span class="badge badge-live"><span class="dot"></span>LIVE</span>
+        </div>
+        <div class="epg-channel-meta" id="epgChannelMeta">Entertainment • English</div>
+      </div>
+      <div class="epg-now-clock">
+        <div class="t" id="epgClock">--:--</div>
+        <div class="d" id="epgDate">Today</div>
+      </div>
+    </div>
+
+    <!-- Program guide -->
+    <div class="epg-guide-title"><i class="ri-calendar-todo-line"></i> Program Guide</div>
+    <div class="epg-list" id="epgList"><!-- populated by JS --></div>
+  </div>
+
+  <script>
+    // ===== Sample EPG data (replace with real API data) =====
+    const epgData = {
+      channel: {
+        name: "Star Sports 1 HD",
+        logoText: "SP1",
+        logoBg: "linear-gradient(135deg,#1e3a8a,#0b1f4d)",
+        meta: "Sports • English • Ch 421"
+      },
+      // "now" is the reference time used to classify programs (Date or minutes offset)
+      programs: [
+        { start: "-90", end: "-30", name: "Morning Highlights", desc: "Best moments from yesterday's match", type: "past" },
+        { start: "-30", end: "-5", name: "Pre-Match Analysis", desc: "Experts break down team line-ups", type: "past" },
+        { start: "-5", end: "115", name: "LIVE: Premier League", desc: "Live coverage of the big clash", type: "live" },
+        { start: "115", end: "195", name: "Post-Match Review", desc: "Full reaction and player interviews", type: "upcoming" },
+        { start: "195", end: "300", name: "Classic Rewind", desc: "Iconic final from 2019", type: "upcoming" },
+        { start: "300", end: "420", name: "Cricket Talk Show", desc: "Weekly debate with former players", type: "upcoming" }
+      ]
+    };
+
+    // ===== Helpers =====
+    const fmt = (mins) => {
+      const d = new Date(Date.now() + mins * 60000);
+      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    };
+
+    function renderEPG(data) {
+      // Channel logo + name
+      const logo = document.getElementById("epgLogo");
+      logo.textContent = data.channel.logoText;
+      logo.style.background = data.channel.logoBg || "";
+      document.getElementById("epgChannelName").textContent = data.channel.name;
+      document.getElementById("epgChannelMeta").textContent = data.channel.meta;
+
+      // Clock
+      const now = new Date();
+      document.getElementById("epgClock").textContent =
+        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      document.getElementById("epgDate").textContent =
+        now.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+
+      // Program list
+      const list = document.getElementById("epgList");
+      list.innerHTML = "";
+
+      data.programs.forEach((p) => {
+        const start = parseInt(p.start, 10), end = parseInt(p.end, 10);
+        const isLive = p.type === "live";
+
+        const el = document.createElement("div");
+        el.className = `epg-program ${p.type}`;
+
+        el.innerHTML = `
+          <span class="time">${fmt(start)} - ${fmt(end)}</span>
+          <div class="info">
+            <div class="name">${p.name}</div>
+            <div class="desc">${p.desc}</div>
+            ${isLive ? '<div class="epg-progress"><div class="fill"></div></div>' : ""}
+          </div>
+          <span class="state">${isLive ? "On Air" : p.type === "past" ? "Catch-up" : "Up Next"}</span>
+        `;
+        list.appendChild(el);
+
+        // Animate progress bar for the live program
+        if (isLive) {
+          const pct = Math.min(100, Math.max(0, ((0 - start) / (end - start)) * 100));
+          requestAnimationFrame(() => {
+            el.querySelector(".fill").style.width = pct.toFixed(1) + "%";
+          });
+        }
+      });
+    }
+
+    renderEPG(epgData);
+    // Refresh clock every 30s
+    setInterval(() => {
+      document.getElementById("epgClock").textContent =
+        new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }, 30000);
+  </script>
+</body>
+
+</html>

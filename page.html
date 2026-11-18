@@ -59,9 +59,6 @@
         <span id="headerSubText">10 Days Free Plan</span>
       </button>
 
-      <div class="user-avatar" id="btnUserAccount" title="Account & Subscription" style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.08); color:#fff; cursor:pointer; margin-left:8px;">
-        <i class="ri-user-fill"></i>
-      </div>
     </div>
   </header>
 
@@ -162,10 +159,15 @@
 
         <!-- Stream Unavailable / Error Message -->
         <div class="stream-error-overlay hidden" id="streamError">
-          <i class="ri-wifi-off-line"></i>
-          <h3>Stream Unavailable</h3>
-          <p id="streamErrorMsg">This channel is offline or the server is not responding.</p>
-          <button id="btnRetryStream" class="retry-btn"><i class="ri-refresh-line"></i> Retry</button>
+          <div class="network-pulse-ring">
+            <i class="ri-wifi-off-line"></i>
+          </div>
+          <h3>Network is Not There</h3>
+          <p id="streamErrorMsg">Network is not there or this channel feed is currently offline.</p>
+          <div class="stream-error-actions">
+            <button id="btnRetryStream" class="retry-btn"><i class="ri-refresh-line"></i> Try Reconnect</button>
+            <button id="btnNextChannel" class="next-ch-btn"><i class="ri-skip-right-line"></i> Next Channel</button>
+          </div>
         </div>
 
         <!-- Subscription Locked Overlay -->

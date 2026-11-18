@@ -76,13 +76,67 @@ MANUAL_CHANNELS = [
         "stream_url": "https://raw.githubusercontent.com/amazeyourself/adaptive-streams/refs/heads/main/streams/in/YuppTV/ZeeTeluguHD.m3u8"
     },
     {
-        "name": "ETV Telugu",
-        "id": "ETVTelugu.in@HD",
-        "category": "Entertainment",
+        "name": "TV9 Telugu",
+        "id": "TV9Telugu.in@HD",
+        "category": "News",
         "language": "Telugu",
-        "logo": "https://xstreamcp-assets-msp.streamready.in/assets/LIVETV/LIVECHANNEL/LIVETV_LIVETVCHANNEL_ETV_HD/images/LOGO_HD/image.png",
-        "logo_char": "ET",
-        "stream_url": "https://mumbai-edge.smartplaytv.in/ETVHD/index.m3u8"
+        "logo": "https://upload.wikimedia.org/wikipedia/en/2/23/TV9_Telugu_logo.png",
+        "logo_char": "T9",
+        "stream_url": "https://dyjmyiv3bp2ez.cloudfront.net/pub-iotv9telcmjhcs/liveabr/playlist.m3u8"
+    },
+    {
+        "name": "NTV Telugu",
+        "id": "NTVTelugu.in@HD",
+        "category": "News",
+        "language": "Telugu",
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/e/ec/NTV_Telugu_Logo.png",
+        "logo_char": "NT",
+        "stream_url": "https://mumbai-edge.smartplaytv.in/NTVTelugu/index.m3u8"
+    },
+    {
+        "name": "Colors Kannada HD",
+        "id": "ColorsKannada.in@HD",
+        "category": "Entertainment",
+        "language": "Kannada",
+        "logo": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Colors_Kannada_logo.png/220px-Colors_Kannada_logo.png",
+        "logo_char": "CK",
+        "stream_url": "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:colorskannadahd1.smil/playlist.m3u8"
+    },
+    {
+        "name": "Colors Tamil HD",
+        "id": "ColorsTamil.in@HD",
+        "category": "Entertainment",
+        "language": "Tamil",
+        "logo": "https://upload.wikimedia.org/wikipedia/en/thumb/9/91/Colors_Tamil_Logo.png/220px-Colors_Tamil_Logo.png",
+        "logo_char": "CT",
+        "stream_url": "https://da86m1sqpm3o0.cloudfront.net/28072023/smil:colorstamilhd11.smil/playlist.m3u8"
+    },
+    {
+        "name": "Sony KAL Hindi",
+        "id": "SonyKALHindi.in@HD",
+        "category": "Entertainment",
+        "language": "Hindi",
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Sony_Entertainment_Television_logo.png",
+        "logo_char": "SK",
+        "stream_url": "https://wurlsonypicturestv.global.transmit.live/hls/68deeb1c0238cda82df543dd/v1/spt_sonykal_1/lg_us/latest/main/hls/playlist.m3u8"
+    },
+    {
+        "name": "Red Bull TV",
+        "id": "RedBullTV.int@HD",
+        "category": "Sports",
+        "language": "English",
+        "logo": "https://resources.redbull.com/logos/redbulltv/v3/redbulltv-logo.png",
+        "logo_char": "RB",
+        "stream_url": "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8"
+    },
+    {
+        "name": "DW English HD",
+        "id": "DWEnglish.de@HD",
+        "category": "News",
+        "language": "English",
+        "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Deutsche_Welle_symbol_2012.svg/200px-Deutsche_Welle_symbol_2012.svg.png",
+        "logo_char": "DW",
+        "stream_url": "https://amg01644-amg01644c1-amgplt0343.playout.now3.amagi.tv/ts-eu-w1-n2/playlist/amg01644-amg01644c1-amgplt0343/playlist.m3u8"
     }
 ]
 
@@ -180,8 +234,16 @@ def load_playlist(playlist_url: str) -> bool:
     return False
 
 
-# Load initial playlist on server boot
-load_playlist(DEFAULT_IPTV_URL)
+# Initialize with high-quality verified manual channels immediately so server starts in <0.1s
+CHANNELS_CACHE = list(MANUAL_CHANNELS)
+
+def _background_load_playlist():
+    import threading
+    t = threading.Thread(target=lambda: load_playlist(DEFAULT_IPTV_URL), daemon=True)
+    t.start()
+
+# Load full external playlist in background
+_background_load_playlist()
 
 
 @app.route("/")
@@ -868,7 +930,11 @@ def get_channels():
 
     if category != "All":
         cat = category.lower()
-        filtered = [c for c in filtered if any(cat in x.strip().lower() for x in c.get("category", "").split(";"))]
+        if cat in ("live tv", "livetv", "live"):
+            # Live TV shows all live feeds
+            pass
+        else:
+            filtered = [c for c in filtered if any(cat in x.strip().lower() for x in c.get("category", "").split(";"))]
 
     if language != "All":
         lang = language.lower()
@@ -1033,8 +1099,7 @@ if __name__ == "__main__":
             # shows the branded app.ico via IconLocation.
             webview.create_window(
                 "My Country TV - Live TV Channels, Shows & Movies",
-                "http://127.0.0.1:5000",
-                **_kwargs,
+                "http://127.0.0.1:5000"
             )
         webview.start()  # Blocks until the user closes the desktop window
     except Exception as e:

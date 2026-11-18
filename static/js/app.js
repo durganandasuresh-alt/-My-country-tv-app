@@ -101,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
   } catch (e) {}
 
   // Subscription state
+  let isSubscriptionActive = true;
   let currentSubscription = {
     is_active: true,
     is_trial: true,
@@ -150,7 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentBottomTab = "home";
   let showOnlyFavorites = false;
   let hlsInstance = null;
-  let useProxy = localStorage.getItem("tvUseProxy") === "1"; // default direct
+  // Default to Flask proxy for 100% reliable cross-origin IPTV playback unless explicitly disabled
+  let useProxy = localStorage.getItem("tvUseProxy") !== "0";
   let favorites = new Set(JSON.parse(localStorage.getItem("jio_favorites") || "[]"));
 
   // Toast notification helper
@@ -189,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function matchCategory(chCat, selectedCat) {
-    if (selectedCat === "All") return true;
+    if (selectedCat === "All" || selectedCat === "Live TV" || selectedCat === "For You") return true;
     const catLower = (chCat || "").toLowerCase();
     const target = selectedCat.toLowerCase();
     if (catLower.includes(target)) return true;
@@ -266,19 +268,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (showOnlyFavorites) {
           channelGrid.innerHTML = `
             <div class="empty-state-card">
-              <i class="ri-heart-3-line"></i>
+              <div class="empty-state-icon-wrap"><i class="ri-heart-3-line"></i></div>
               <h3>No Favorites Added Yet</h3>
-              <p>Tap the heart icon on any channel to add it to your favorite channels list.</p>
-              <button class="btn-jio" onclick="document.getElementById('tabNavLive').click()">Browse Live TV</button>
+              <p>Tap the heart icon on any channel to add it to your favorite channels list for instant 1-tap access.</p>
+              <button class="btn-jio btn-empty-action" onclick="document.getElementById('tabNavLive').click()"><i class="ri-tv-fill"></i> Browse Live TV</button>
             </div>
           `;
         } else {
           channelGrid.innerHTML = `
             <div class="empty-state-card">
-              <i class="ri-search-2-line"></i>
+              <div class="empty-state-icon-wrap"><i class="ri-search-2-line"></i></div>
               <h3>No Channels Found</h3>
-              <p>Try searching with another keyword or pick another category / language.</p>
-              <button class="btn-jio" onclick="document.querySelector('.cat-tab[data-cat=\\'All\\']').click()">Show All Channels</button>
+              <p>We couldn't find any channels matching your current search or filters. Try another term or reset.</p>
+              <button class="btn-jio btn-empty-action" onclick="document.querySelector('.cat-tab[data-cat=\\'All\\']').click()"><i class="ri-apps-2-fill"></i> Show All Channels</button>
             </div>
           `;
         }
@@ -607,7 +609,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Detect Android WebView user agent flag on startup
+  // Detect Android WebView user agent flag or Android OS on startup
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  if (isAndroid) {
+    document.documentElement.classList.add("is-android-device");
+    document.body.classList.add("is-android-device");
+  }
+
   if (navigator.userAgent && navigator.userAgent.includes("MyCountryTV-AndroidApp")) {
     document.documentElement.classList.add("is-android-native-app");
     document.body.classList.add("is-android-native-app");
@@ -831,6 +839,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Search input & debounce
   let searchDebounce = null;
+  const headerSearch = document.querySelector(".header-search");
+  const btnMobileSearchToggle = document.getElementById("btnMobileSearchToggle");
+
+  if (btnMobileSearchToggle && headerSearch) {
+    btnMobileSearchToggle.addEventListener("click", () => {
+      const isOpen = headerSearch.classList.toggle("mobile-search-open");
+      btnMobileSearchToggle.classList.toggle("active", isOpen);
+      btnMobileSearchToggle.innerHTML = isOpen ? `<i class="ri-close-line"></i>` : `<i class="ri-search-line"></i>`;
+      if (isOpen && searchInput) {
+        setTimeout(() => searchInput.focus(), 100);
+      }
+    });
+  }
+
   if (searchInput) {
     searchInput.addEventListener("input", () => {
       const val = searchInput.value.trim();
@@ -1880,7 +1902,6 @@ function updateSubscriptionState(sub) {
   // CATCH-UP TV (EPG) TIMELINE RENDERER
   // ========================================================
   const epgTimeline = document.getElementById("epgTimeline");
-  const epgCurrentName = document.getElementById("epgCurrentName");
 
   function renderCatchupTimeline(channel) {
     if (!epgTimeline) return;

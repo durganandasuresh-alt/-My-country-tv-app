@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request, Response, send_file
 import requests
 import re
 import os
+import json
 import sqlite3
 import datetime
 import math
@@ -217,16 +218,43 @@ def parse_m3u(content: str) -> list:
     return channels
 
 
+# Local disk cache file for instant offline startup with 10,000+ channels
+CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "channels_cache.json")
+
+def load_cached_channels():
+    """Instantly loads 10,000+ channels from local JSON cache if available."""
+    if os.path.isfile(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list) and len(data) > 0:
+                    print(f"[+] Loaded {len(data)} channels from local cache.")
+                    return data
+        except Exception as e:
+            print(f"[-] Error loading local channels cache: {e}")
+    return list(MANUAL_CHANNELS)
+
+def save_channels_cache(channels):
+    """Persists channels to local disk JSON cache."""
+    try:
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(channels, f, ensure_ascii=False)
+        print(f"[+] Saved {len(channels)} channels to local cache.")
+    except Exception as e:
+        print(f"[-] Error saving channels cache: {e}")
+
 def load_playlist(playlist_url: str) -> bool:
     """Fetches and parses the M3U playlist from an HTTP/HTTPS link."""
     global CHANNELS_CACHE
     try:
-        resp = http.get(playlist_url, headers=BROWSER_HEADERS, timeout=12)
+        resp = http.get(playlist_url, headers=BROWSER_HEADERS, timeout=25)
         if resp.status_code == 200:
-            CHANNELS_CACHE = parse_m3u(resp.content.decode('utf-8',errors='ignore'))
-            CHANNELS_CACHE = MANUAL_CHANNELS + CHANNELS_CACHE
-            print(f"[+] Successfully loaded {len(CHANNELS_CACHE)} channels.")
-            return True
+            parsed = parse_m3u(resp.content.decode('utf-8', errors='ignore'))
+            if parsed:
+                CHANNELS_CACHE = MANUAL_CHANNELS + parsed
+                save_channels_cache(CHANNELS_CACHE)
+                print(f"[+] Successfully loaded and cached {len(CHANNELS_CACHE)} channels.")
+                return True
         else:
             print(f"[-] Failed with status code: {resp.status_code}")
     except Exception as e:
@@ -234,16 +262,21 @@ def load_playlist(playlist_url: str) -> bool:
     return False
 
 
-# Initialize with high-quality verified manual channels immediately so server starts in <0.1s
-CHANNELS_CACHE = list(MANUAL_CHANNELS)
+# Initialize with full 10,000+ channels immediately from local cache (<0.03s)
+CHANNELS_CACHE = load_cached_channels()
 
 def _background_load_playlist():
     import threading
     t = threading.Thread(target=lambda: load_playlist(DEFAULT_IPTV_URL), daemon=True)
     t.start()
 
-# Load full external playlist in background
-_background_load_playlist()
+# If cache is missing or small, refresh from external IPTV in background
+if len(CHANNELS_CACHE) < 100:
+    _background_load_playlist()
+else:
+    # Also background refresh after 10s without blocking
+    import threading
+    threading.Timer(10.0, _background_load_playlist).start()
 
 
 @app.route("/")

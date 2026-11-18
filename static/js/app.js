@@ -1070,6 +1070,31 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!activeChannel && filteredChannels.length > 0) {
           playChannel(filteredChannels[0]);
         }
+
+        // If backend is still warming up background playlist (<= 50 channels), poll until full 10,000+ are ready
+        if (allChannels.length < 100 && !window._channelsPollInterval) {
+          let pollAttempts = 0;
+          window._channelsPollInterval = setInterval(async () => {
+            pollAttempts++;
+            if (pollAttempts > 30 || allChannels.length >= 100) {
+              clearInterval(window._channelsPollInterval);
+              window._channelsPollInterval = null;
+              return;
+            }
+            try {
+              const r = await fetch(`/api/channels?user_id=${encodeURIComponent(currentUserId)}`);
+              const d = await r.json();
+              if (d.status === "success" && d.channels && d.channels.length > allChannels.length) {
+                allChannels = d.channels;
+                applyFilters();
+                if (allChannels.length >= 100) {
+                  clearInterval(window._channelsPollInterval);
+                  window._channelsPollInterval = null;
+                }
+              }
+            } catch (e) {}
+          }, 3000);
+        }
       }
     } catch (err) {
       if (channelGrid) {

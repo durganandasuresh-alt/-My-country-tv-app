@@ -1,7 +1,6 @@
 .andromity/
 __pycache__/
 *.pyc
-channels_cache.json
 android-source/.gradle/
 android-source/build/
 android-source/app/build/

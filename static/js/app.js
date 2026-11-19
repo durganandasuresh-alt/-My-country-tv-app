@@ -203,28 +203,46 @@ document.addEventListener("DOMContentLoaded", () => {
     return false;
   }
 
-  // Language matching (supports 3-letter codes & full names)
+  // Language matching (supports codes, aliases and full names)
   const LANG_CODES = {
-    "Hindi": ["hindi", "hin"],
-    "Kannada": ["kannada", "kan"],
-    "Telugu": ["telugu", "tel"],
-    "Tamil": ["tamil", "tam"],
-    "English": ["english", "eng"]
+    "Hindi": ["hindi", "hin", "bollywood"],
+    "Telugu": ["telugu", "tel", "tollywood", "andhra"],
+    "Tamil": ["tamil", "tam", "kollywood"],
+    "Kannada": ["kannada", "kan", "sandalwood"],
+    "Malayalam": ["malayalam", "mal", "mollywood"],
+    "Marathi": ["marathi", "mar"],
+    "Bengali": ["bengali", "ben", "bangla"],
+    "Punjabi": ["punjabi", "pan"],
+    "Gujarati": ["gujarati", "guj"],
+    "Urdu": ["urdu", "urd"],
+    "English": ["english", "eng"],
+    "Spanish": ["spanish", "spa", "espanol"],
+    "French": ["french", "fra", "francais"],
+    "German": ["german", "deu", "deutsch"],
+    "Arabic": ["arabic", "ara"],
+    "Russian": ["russian", "rus"],
+    "Portuguese": ["portuguese", "por"],
+    "Italian": ["italian", "ita"],
+    "Chinese": ["chinese", "zho"]
   };
 
   function matchLanguage(ch, selectedLang) {
-    if (selectedLang === "All") return true;
+    if (!selectedLang || selectedLang === "All") return true;
     const langLower = (ch.language || "").toLowerCase();
     const nameLower = (ch.name || "").toLowerCase();
+    const idLower = (ch.id || "").toLowerCase();
     const target = selectedLang.toLowerCase();
 
-    if (langLower.includes(target) || nameLower.includes(target)) return true;
+    // Direct match on language attribute
+    if (langLower === target || langLower.includes(target)) return true;
 
+    // Check specific language codes and aliases
     const codes = LANG_CODES[selectedLang];
     if (codes) {
-      return codes.some(c => langLower.includes(c) || nameLower.includes(`(${c})`) || nameLower.includes(`[${c}]`));
+      if (codes.some(c => langLower === c || langLower.includes(c))) return true;
+      if (codes.some(c => nameLower.includes(c) || idLower.includes(c) || nameLower.includes(`(${c})`) || nameLower.includes(`[${c}]`))) return true;
     }
-    return false;
+    return nameLower.includes(target);
   }
 
   // Apply filters and slice initial chunk
@@ -249,7 +267,27 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     if (channelCount) {
-      channelCount.textContent = `Showing ${filteredChannels.length} Channels`;
+      if (currentLanguage !== "All" && currentCategory !== "All") {
+        channelCount.textContent = `Showing ${filteredChannels.length} ${currentLanguage} ${currentCategory} Channels`;
+      } else if (currentLanguage !== "All") {
+        channelCount.textContent = `Showing ${filteredChannels.length} ${currentLanguage} Channels`;
+      } else if (currentCategory !== "All") {
+        channelCount.textContent = `Showing ${filteredChannels.length} ${currentCategory} Channels`;
+      } else {
+        channelCount.textContent = `Showing ${filteredChannels.length} Channels`;
+      }
+    }
+
+    if (currentCategoryTitle) {
+      if (currentLanguage !== "All" && currentCategory !== "All") {
+        currentCategoryTitle.textContent = `${currentLanguage} ${currentCategory} Channels`;
+      } else if (currentLanguage !== "All") {
+        currentCategoryTitle.textContent = `All ${currentLanguage} Channels`;
+      } else if (currentCategory !== "All") {
+        currentCategoryTitle.textContent = `${currentCategory} Channels`;
+      } else {
+        currentCategoryTitle.textContent = "All Live Channels";
+      }
     }
 
     // Reset grid & render first chunk
@@ -1057,7 +1095,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (lang && !currentOptions.has(lang.toLowerCase())) {
               const opt = document.createElement("option");
               opt.value = lang;
-              opt.textContent = lang;
+              opt.textContent = `${lang} Channels`;
               langFilter.appendChild(opt);
               currentOptions.add(lang.toLowerCase());
             }

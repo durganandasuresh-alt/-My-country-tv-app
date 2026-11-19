@@ -2,8 +2,11 @@ import unittest
 import importlib
 import json
 
-# Import app from "tv app.py"
-tv_app = importlib.import_module("tv app")
+# Import app from "tv.py"
+try:
+    import tv as tv_app
+except ImportError:
+    tv_app = importlib.import_module("tv")
 app = tv_app.app
 
 class TestSubscriptionSystem(unittest.TestCase):

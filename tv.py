@@ -146,8 +146,46 @@ MANUAL_CHANNELS = [
 LANG_MAP = {
     "hin": "Hindi", "kan": "Kannada", "tel": "Telugu", "tam": "Tamil",
     "eng": "English", "mal": "Malayalam", "mar": "Marathi", "ben": "Bengali",
-    "guj": "Gujarati", "pan": "Punjabi", "urd": "Urdu", "ori": "Odia" 
+    "guj": "Gujarati", "pan": "Punjabi", "urd": "Urdu", "ori": "Odia",
+    "asm": "Assamese", "nep": "Nepali", "sin": "Sinhala", "spa": "Spanish",
+    "fra": "French", "deu": "German", "ita": "Italian", "rus": "Russian",
+    "ara": "Arabic", "por": "Portuguese", "zho": "Chinese", "jpn": "Japanese",
+    "kor": "Korean", "tur": "Turkish", "fas": "Persian", "pol": "Polish",
+    "ukr": "Ukrainian", "nld": "Dutch", "ind": "Indonesian", "tha": "Thai",
+    "vie": "Vietnamese", "swe": "Swedish", "ron": "Romanian", "hun": "Hungarian"
 }
+
+# Regex language detector for channels
+LANG_REGEX_PATTERNS = [
+    ("Telugu", re.compile(r'\b(telugu|andhra|tollywood|sakshi|v6|tv9\s*telugu|ntv\s*telugu|etv\s*telugu|etv\s*cinema|etv\s*plus|etv\s*life|etv\s*abhiruchi|star\s*maa|zee\s*telugu|abn|mahaa|t\s*news|10\s*tv|bhakthi|hmtv|prime9|cvr|subhavaartha|anjali\s*tv|6\s*tv\s*telugu|9\s*plus\s*news|99tv|big\s*tv|studio\s*one)\b', re.I)),
+    ("Hindi", re.compile(r'\b(hindi|bollywood|aaj\s*tak|india\s*tv|abp\s*news|zee\s*news|republic\s*bharat|times\s*now\s*navbharat|news18\s*india|ndtv\s*india|good\s*news\s*today|sansad\s*tv|dd\s*news|dd\s*national|dd\s*sports|dd\s*bharati|9xm|9x\s*jalwa|b4u|dangal|enterr10|shemaroo|mastiii|music\s*india|&tv|goldmines|cinema\s*tv|maha\s*movie|manoranjan|sony\s*kal|sadhna|sanskar|aastha|arihant|tez|tez\s*news|news24|samachar|khabar|sudharshan|total\s*tv)\b', re.I)),
+    ("Kannada", re.compile(r'\b(kannada|colors\s*kannada|zee\s*kannada|tv9\s*kannada|public\s*tv|suvarna|dighvijay|kasturi|sandalwood)\b', re.I)),
+    ("Tamil", re.compile(r'\b(tamil|colors\s*tamil|zee\s*tamil|sun\s*tv|ktv|sun\s*music|polimer|thanthi|puthiya\s*thalaimurai|kollywood|jaya\s*tv|raj\s*tv|captain\s*tv)\b', re.I)),
+    ("Malayalam", re.compile(r'\b(malayalam|asianet|mazhavil|flowers\s*tv|kairali|amrita|manorama\s*news|mathrubhumi|mediaone|reporter\s*tv|mollywood)\b', re.I)),
+    ("Marathi", re.compile(r'\b(marathi|abp\s*majha|zee\s*24\s*taas|colors\s*marathi|zee\s*marathi|tv9\s*marathi|news18\s*lokmat|saam\s*tv)\b', re.I)),
+    ("Bengali", re.compile(r'\b(bengali|bangla|abp\s*ananda|zee\s*24\s*ghanta|news18\s*bangla|colors\s*bangla|zee\s*bangla|kolkata)\b', re.I)),
+    ("Punjabi", re.compile(r'\b(punjabi|ptc|zee\s*punjabi|news18\s*punjab|mh\s*one|chardikla|7x\s*punjabi|7x\s*music)\b', re.I)),
+    ("Gujarati", re.compile(r'\b(gujarati|gujarat|abp\s*asmita|zee\s*24\s*kalak|news18\s*gujarati|sandesh\s*news|vtv|colors\s*gujarati)\b', re.I)),
+    ("Urdu", re.compile(r'\b(urdu|ary|geo\s*news|geo\s*tv|hum\s*tv|bol\s*news|express\s*news|samaa|dunya\s*news|4tv\s*news|madani)\b', re.I)),
+]
+
+def resolve_language(raw_name: str, raw_id: str, tvg_lang: str) -> str:
+    """Accurately identifies channel language using name, id and metadata."""
+    for lang_name, pat in LANG_REGEX_PATTERNS:
+        if pat.search(raw_name):
+            return lang_name
+    if tvg_lang:
+        tl = tvg_lang.strip().lower()
+        if tl in LANG_MAP:
+            return LANG_MAP[tl]
+        for code, l_name in LANG_MAP.items():
+            if code in tl or l_name.lower() in tl:
+                return l_name
+    id_lower = raw_id.lower()
+    for lang_name, pat in LANG_REGEX_PATTERNS:
+        if pat.search(id_lower):
+            return lang_name
+    return "General"
 
 
 def parse_m3u(content: str) -> list:
@@ -190,24 +228,15 @@ def parse_m3u(content: str) -> list:
             group_match = re.search(r'group-title="([^"]*)"', line)
             current_meta["category"] = group_match.group(1) if group_match else "General"
 
+            # Channel ID
+            id_match = re.search(r'tvg-id="([^"]*)"', line)
+            raw_id = id_match.group(1) if id_match else f"ch-{len(channels) + 1}"
+            current_meta["id"] = raw_id
+
             # Language
             lang_match = re.search(r'tvg-language="([^"]*)"', line)
             lang_val = lang_match.group(1).strip() if lang_match else ""
-            # Normalize 3-letter codes to full language names if found
-            if lang_val.lower() in LANG_MAP:
-                lang_val = LANG_MAP[lang_val.lower()]
-            elif not lang_val:
-                # Detect language keyword in channel name
-                lower_name = raw_name.lower()
-                for code, lang_name in LANG_MAP.items():
-                    if lang_name.lower() in lower_name:
-                        lang_val = lang_name
-                        break
-            current_meta["language"] = lang_val if lang_val else "General"
-
-            # Channel ID
-            id_match = re.search(r'tvg-id="([^"]*)"', line)
-            current_meta["id"] = id_match.group(1) if id_match else f"ch-{len(channels) + 1}"
+            current_meta["language"] = resolve_language(raw_name, raw_id, lang_val)
 
         elif not line.startswith("#") and current_meta:
             # The direct stream URL (.m3u8 or .ts)
@@ -222,16 +251,23 @@ def parse_m3u(content: str) -> list:
 CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "channels_cache.json")
 
 def load_cached_channels():
-    """Instantly loads 10,000+ channels from local JSON cache if available."""
-    if os.path.isfile(CACHE_FILE):
-        try:
-            with open(CACHE_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data, list) and len(data) > 0:
-                    print(f"[+] Loaded {len(data)} channels from local cache.")
-                    return data
-        except Exception as e:
-            print(f"[-] Error loading local channels cache: {e}")
+    """Instantly loads 10,000+ channels from local JSON cache permanently."""
+    candidate_paths = [
+        CACHE_FILE,
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "channels_cache.json"),
+        os.path.join(os.getcwd(), "channels_cache.json"),
+        "channels_cache.json"
+    ]
+    for p in candidate_paths:
+        if os.path.isfile(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list) and len(data) >= 100:
+                        print(f"[+] Loaded {len(data)} channels permanently from {p}.")
+                        return data
+            except Exception as e:
+                print(f"[-] Error loading local channels cache from {p}: {e}")
     return list(MANUAL_CHANNELS)
 
 def save_channels_cache(channels):
@@ -244,16 +280,19 @@ def save_channels_cache(channels):
         print(f"[-] Error saving channels cache: {e}")
 
 def load_playlist(playlist_url: str) -> bool:
-    """Fetches and parses the M3U playlist from an HTTP/HTTPS link."""
+    """Fetches and parses the M3U playlist from an HTTP/HTTPS link without wiping enriched channels."""
     global CHANNELS_CACHE
     try:
         resp = http.get(playlist_url, headers=BROWSER_HEADERS, timeout=25)
         if resp.status_code == 200:
             parsed = parse_m3u(resp.content.decode('utf-8', errors='ignore'))
             if parsed:
-                CHANNELS_CACHE = MANUAL_CHANNELS + parsed
-                save_channels_cache(CHANNELS_CACHE)
-                print(f"[+] Successfully loaded and cached {len(CHANNELS_CACHE)} channels.")
+                existing_urls = {c.get("stream_url") for c in CHANNELS_CACHE if c.get("stream_url")}
+                new_items = [p for p in parsed if p.get("stream_url") and p["stream_url"] not in existing_urls]
+                if new_items:
+                    CHANNELS_CACHE = CHANNELS_CACHE + new_items
+                    save_channels_cache(CHANNELS_CACHE)
+                    print(f"[+] Loaded {len(new_items)} new channels. Total cached: {len(CHANNELS_CACHE)}.")
                 return True
         else:
             print(f"[-] Failed with status code: {resp.status_code}")
@@ -270,13 +309,9 @@ def _background_load_playlist():
     t = threading.Thread(target=lambda: load_playlist(DEFAULT_IPTV_URL), daemon=True)
     t.start()
 
-# If cache is missing or small, refresh from external IPTV in background
-if len(CHANNELS_CACHE) < 100:
+# Only refresh in background if cache is missing or small (< 1,000 channels)
+if len(CHANNELS_CACHE) < 1000:
     _background_load_playlist()
-else:
-    # Also background refresh after 10s without blocking
-    import threading
-    threading.Timer(10.0, _background_load_playlist).start()
 
 
 @app.route("/")
@@ -971,10 +1006,14 @@ def get_channels():
 
     if language != "All":
         lang = language.lower()
-        filtered = [c for c in filtered if any(lang in x.strip().lower() for x in c.get("language", "").split(";"))]
+        filtered = [
+            c for c in filtered
+            if any(lang in x.strip().lower() for x in (c.get("language", "") or "").split(";"))
+            or lang in (c.get("name", "") or "").lower()
+        ]
 
     if search:
-        filtered = [c for c in filtered if search in c.get("name", "").lower() or search in c.get("category", "").lower()]
+        filtered = [c for c in filtered if search in c.get("name", "").lower() or search in c.get("category", "").lower() or search in c.get("language", "").lower()]
 
     categories = sorted({
         part.strip() for c in CHANNELS_CACHE
@@ -982,11 +1021,20 @@ def get_channels():
         if part.strip()
     })
 
-    languages = sorted(list({
+    # Prioritize popular regional Indian and international languages in dropdown
+    TOP_LANG_ORDER = [
+        "Hindi", "Telugu", "Tamil", "Kannada", "Malayalam",
+        "Marathi", "Bengali", "Punjabi", "Gujarati", "Urdu",
+        "English", "Spanish", "French", "German", "Arabic", "Russian"
+    ]
+    all_unique_langs = {
         l.strip() for c in CHANNELS_CACHE
         for l in (c.get("language", "") or "General").split(";")
-        if l.strip()
-    }))
+        if l.strip() and l.strip() != "General"
+    }
+    ordered_langs = [l for l in TOP_LANG_ORDER if l in all_unique_langs]
+    other_langs = sorted([l for l in all_unique_langs if l not in TOP_LANG_ORDER])
+    languages = ordered_langs + other_langs
 
     # Annotate channels with is_free and is_locked
     enriched_channels = []
